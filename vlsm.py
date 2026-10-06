@@ -5,8 +5,6 @@ import sys
 
 ## Returns the smallest prefix length that has enough usable addresses for the number of hosts required
 def prefix(required_hosts):
-	if (required_hosts <= 0):
-		raise ValueError(f"Host requirement {required_hosts} is too small")
 	# Need space for a network and broadcast 
 	total_num_addr = required_hosts + 2  
 
@@ -19,6 +17,9 @@ def prefix(required_hosts):
 def assign_subnets(network, subnets):
 	# Points to next available address
 	next_addr = network.network_address
+
+	# Sort subnets by host requirements from largest to smallest 
+	subnets.sort(key=lambda x: x["hosts_required"], reverse=True)
         
 	# Assign a network to each subnet
 	for subnet in subnets:
@@ -89,14 +90,17 @@ def parse_args():
 		parser.error("Subnet name/host requirements must be given in pairs")
 	try: 
 		for i in range(1,len(args.subnets),2):
-			int(args.subnets[i])
+			num = int(args.subnets[i]) 
+			if num < 1:
+				raise ValueError()
 	except ValueError:
 			parser.error(f"Host requirement must be a positive integer, got {args.subnets[i]}") 
 	return args
 
 def main():
 	args = parse_args()
-	# Create a list of subnets sorted from largest host requirement to smallest
+	
+	# Create a list of subnets 
 	subnets = []
 	for i in range(0, len(args.subnets), 2):
 		subnet = {
@@ -105,8 +109,6 @@ def main():
 			"network":None,
 		}
 		subnets.append(subnet)
-        	
-	subnets.sort(key=lambda x: x["hosts_required"], reverse=True)
 
 	# Create parent network
 	network = ipaddress.ip_network(args.network)	
